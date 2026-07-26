@@ -44,3 +44,69 @@ def list_products():
     products = Product.query.all()
     resultado = [{"id": p.id, "name": p.name, "franquia": p.franquia, "embalagem": p.embalagem} for p in products]
     return jsonify(resultado), 200
+
+
+import pandas as pd
+from flask import Blueprint, request, jsonify
+from models import db, Product  # Ajuste conforme a importação do seu modelo
+
+
+@products_bp.route('/upload', methods=['POST'])
+def upload_products_excel():
+    if 'file' not in request.files:
+        return jsonify({"error": "Nenhum arquivo enviado"}), 400
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({"error": "Nome de arquivo inválido"}), 400
+        
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        return jsonify({"error": "Apenas arquivos Excel (.xlsx ou .xls) são permitidos"}), 400
+
+    try:
+        # Lê o arquivo Excel enviado
+        df = pd.read_excel(file)
+        
+        # Valida se as colunas da imagem existem no arquivo
+        colunas_necessarias = ['Código', 'Franquia', 'Embalagem', 'Descrição']
+        for coluna in colunas_necessarias:
+            if coluna not in df.columns:
+                return jsonify({"error": f"Coluna obrigatória ausente na planilha: '{coluna}'"}), 400
+
+        importados = 0
+        
+        for _, row in df.iterrows():
+            # Converte os valores para string e trata possíveis nulos
+            cod_peform = str(row['Código']).strip()
+            franquia = str(row['Franquia']).strip()
+            embalagem = str(row['Embalagem']).strip()
+            descricao = str(row['Descrição']).strip()
+
+            if not cod_peform or cod_peform == 'nan':
+                continue
+
+            # Verifica se o produto já existe (para atualizar ou criar)
+            product = Product.query.filter_by(cod_peform=cod_peform).first()
+            
+            if product:
+                product.franquia = franquia
+                product.embalagem = embalagem
+                product.name = descricao
+            else:
+                novo_produto = Product(
+                    cod_peform=cod_peform,
+                    franquia=franquia,
+                    embalagem=embalagem,
+                    name=descricao
+                )
+                db.session.add(novo_produto)
+            
+            importados += 1
+
+        db.session.commit()
+        return jsonify({"message": f"Sucesso! {importados} produtos processados e salvos."}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Erro ao processar planilha: {str(e)}"}), 500

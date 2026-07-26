@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-
+from uuid import uuid4
 db = SQLAlchemy()
 
 class User(db.Model):
@@ -17,6 +17,7 @@ class Product(db.Model):
     __tablename__ = 'products'
     
     id = db.Column(db.Integer, primary_key=True)
+    cod_peform = db.Column(db.String(50), nullable=False, unique=True, default=lambda: str(uuid4())) # Ex: 123456
     name = db.Column(db.String(150), nullable=False, unique=True) # Ex: Açaí Tradicional
     franquia = db.Column(db.String(50), nullable=False) # DG, NTZ, SMO, MON
     embalagem = db.Column(db.String(50), nullable=False) # CX10L, PK6, CX5L, BAL3.6L, PICOLE, PALETA, 500ML
@@ -42,6 +43,7 @@ class Avaria(db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    baixada_at = db.Column(db.DateTime, nullable=True)  # Nova coluna para armazenar a data de baixa
     
     created_by = db.relationship('User', foreign_keys=[created_by_id])
     resolved_by = db.relationship('User', foreign_keys=[resolved_by_id])
@@ -58,7 +60,7 @@ class AvariaHistory(db.Model):
     action = db.Column(db.String(100), nullable=False) # Ex: "Atualização de quantidade", "Alteração de produto"
     details = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    baixada_at = db.Column(db.DateTime, nullable=True)
     user = db.relationship('User')
 
 

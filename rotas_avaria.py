@@ -117,6 +117,7 @@ def dar_baixa_avaria(id):
     try:
         avaria.status = 'Dado Baixa'
         avaria.resolved_by_id = user_id
+        avaria.baixada_at = func.now()  # Marca a data de baixa
         db.session.commit()
         
         return jsonify({"message": "Baixa realizada com sucesso na avaria!"}), 200
@@ -146,7 +147,8 @@ def get_avaria_detail(id):
         "status": avaria.status,
         "criado_por": avaria.created_by.name if avaria.created_by else "Desconhecido",
         "resolvido_por": avaria.resolved_by.name if avaria.resolved_by else None,
-        "data_criacao": avaria.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        "data_criacao": avaria.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+        "baixada_at": avaria.baixada_at.strftime('%Y-%m-%d %H:%M:%S') if avaria.baixada_at else None
     }), 200
 
 
