@@ -18,5 +18,5 @@ COPY . .
 EXPOSE 5000
 
 # Comando para rodar a aplicação
-CMD ["flask", "run", "--host=0.0.0.0"]
-#CMD gunicorn --bind 0.0.0.0:${PORT:-5000} app:app
+#CMD ["flask", "run", "--host=0.0.0.0"]
+CMD gunicorn --bind 0.0.0.0:${PORT:-5000} app:app
